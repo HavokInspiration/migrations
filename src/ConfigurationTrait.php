@@ -11,6 +11,7 @@
  */
 namespace Migrations;
 
+use Cake\Core\Configure;
 use Cake\Core\Plugin;
 use Cake\Datasource\ConnectionManager;
 use Cake\Utility\Inflector;
@@ -72,11 +73,28 @@ trait ConfigurationTrait
         }
 
         $plugin = $plugin ? Inflector::underscore($plugin) . '_' : '';
-        $plugin = str_replace(array('\\', '/', '.'), '_', $plugin);
+        $plugin = str_replace(['\\', '/', '.'], '_', $plugin);
 
         $connection = $this->getConnectionName($this->input);
 
         $config = ConnectionManager::config($connection);
+        $environmentParams = [
+            'adapter' => $this->getAdapterName($config['driver']),
+            'host' => isset($config['host']) ? $config['host'] : null,
+            'user' => isset($config['username']) ? $config['username'] : null,
+            'pass' => isset($config['password']) ? $config['password'] : null,
+            'port' => isset($config['port']) ? $config['port'] : null,
+            'name' => $config['database'],
+            'charset' => isset($config['encoding']) ? $config['encoding'] : null,
+        ];
+
+        if ($this->input->getOption('collation')) {
+            $collation = $this->input->getOption('collation');
+            $environmentParams['collation'] = $collation;
+        } elseif (Configure::check('Migrations.collation')) {
+            $environmentParams['collation'] = Configure::read('Migrations.collation');
+        }
+
         return $this->configuration = new Config([
             'paths' => [
                 'migrations' => $dir
@@ -84,15 +102,7 @@ trait ConfigurationTrait
             'environments' => [
                 'default_migration_table' => $plugin . 'phinxlog',
                 'default_database' => 'default',
-                'default' => [
-                    'adapter' => $this->getAdapterName($config['driver']),
-                    'host' => isset($config['host']) ? $config['host'] : null,
-                    'user' => isset($config['username']) ? $config['username'] : null,
-                    'pass' => isset($config['password']) ? $config['password'] : null,
-                    'port' => isset($config['port']) ? $config['port'] : null,
-                    'name' => $config['database'],
-                    'charset' => isset($config['encoding']) ? $config['encoding'] : null,
-                ]
+                'default' => $environmentParams
             ]
         ]);
     }

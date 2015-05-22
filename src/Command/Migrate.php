@@ -37,7 +37,8 @@ class Migrate extends MigrateCommand
             ->setHelp('runs all available migrations, optionally up to a specific version')
             ->addOption('--plugin', '-p', InputArgument::OPTIONAL, 'The plugin containing the migrations')
             ->addOption('--connection', '-c', InputArgument::OPTIONAL, 'The datasource connection to use')
-            ->addOption('--source', '-s', InputArgument::OPTIONAL, 'The folder where migrations are in');
+            ->addOption('--source', '-s', InputArgument::OPTIONAL, 'The folder where migrations are in')
+            ->addOption('--collation', null, InputArgument::OPTIONAL, 'The database collation to use');
     }
 
     /**
