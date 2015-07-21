@@ -59,16 +59,16 @@ class <%= $name %> extends AbstractMigration
                 $constraints[$table] = $tableConstraints;
 
                 foreach ($constraints[$table] as $constraint):
-                    $constraintColumns = $constraint['columns'];
                     if ($constraint['type'] !== 'unique'):
                         $foreignKeys += $constraint['columns'];
-                    elseif ($constraintColumns !== $primaryKeysColumns): %>
-                    ->addIndex(
-                        [<%
-                            echo $this->Migration->stringifyList($constraint['columns'], ['indent' => 5]);
-                        %>],
-                        ['unique' => true]
-                    )
+                    endif;
+                    if ($constraint['columns'] !== $primaryKeysColumns): %>
+            ->addIndex(
+                [<% echo $this->Migration->stringifyList($constraint['columns'], ['indent' => 5]); %>],
+                <%- if ($constraint['type'] === 'unique'): %>
+                ['unique' => true];
+                <%- endif; %>
+            )
                     <%- endif;
                 endforeach;
             endif;
@@ -89,24 +89,23 @@ class <%= $name %> extends AbstractMigration
             -><%= $tableMethod %>();
 
     <%- endforeach; %>
-
     <%- foreach ($constraints as $table => $tableConstraints):
-        foreach ($tableConstraints as $constraint):
-            $constraintColumns = $constraint['columns'];
-            sort($constraintColumns);
-            if ($constraint['type'] !== 'unique'):
-                $columnsList = '\'' . $constraint['columns'][0] . '\'';
-                if (count($constraint['columns']) > 1):
-                    $columnsList = '[' . $this->Migration->stringifyList($constraint['columns'], ['indent' => 5]) . ']';
-                endif;
-                $dropForeignKeys[$table] = $columnsList;
+            foreach ($tableConstraints as $constraint):
+                $constraintColumns = $constraint['columns'];
+                sort($constraintColumns);
+                if ($constraint['type'] !== 'unique'):
+                    $columnsList = '\'' . $constraint['columns'][0] . '\'';
+                    if (count($constraint['columns']) > 1):
+                        $columnsList = '[' . $this->Migration->stringifyList($constraint['columns'], ['indent' => 5]) . ']';
+                    endif;
+                    $dropForeignKeys[$table] = $columnsList;
 
-                if (is_array($constraint['references'][1])):
-                    $columnsReference = '[' . $this->Migration->stringifyList($constraint['references'][1], ['indent' => 5]) . ']';
-                else:
-                    $columnsReference = '\'' . $constraint['references'][1] . '\'';
-                endif; %>
-                <%= $this->Migration->tableStatement($table); %>
+                    if (is_array($constraint['references'][1])):
+                        $columnsReference = '[' . $this->Migration->stringifyList($constraint['references'][1], ['indent' => 5]) . ']';
+                    else:
+                        $columnsReference = '\'' . $constraint['references'][1] . '\'';
+                    endif; %>
+        <%= $this->Migration->tableStatement($table); %>
             ->addForeignKey(
                 <%= $columnsList %>,
                 '<%= $constraint['references'][0] %>',
@@ -116,12 +115,12 @@ class <%= $name %> extends AbstractMigration
                     'delete' => '<%= $constraint['delete'] %>'
                 ]
             )
-            <%- endif; %>
+                <%- endif; %>
         <%- endforeach; %>
         <%- if (isset($this->Migration->tableStatements[$table])): %>
             ->update();
-        <%- endif; %>
 
+        <%- endif; %>
     <%- endforeach; %>
     }
 
@@ -133,8 +132,8 @@ class <%= $name %> extends AbstractMigration
                 <%= $columns %>
             )
             ->update();
-        <%- endforeach; %>
 
+        <%- endforeach; %>
         <%- foreach ($tables as $table): %>
         $this->dropTable('<%= $table%>');
         <%- endforeach; %>

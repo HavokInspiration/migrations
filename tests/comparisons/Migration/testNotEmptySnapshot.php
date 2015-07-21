@@ -32,6 +32,12 @@ class NotEmptySnapshot extends AbstractMigration
                 'limit' => null,
                 'null' => true,
             ])
+            ->addIndex(
+                [
+                    'slug',
+                ],
+                ['unique' => true];
+            )
             ->create();
 
         $table = $this->table('composite_pks', ['id' => false, 'primary_key' => ['id', 'name']]);
@@ -75,6 +81,17 @@ class NotEmptySnapshot extends AbstractMigration
                 'limit' => null,
                 'null' => true,
             ])
+            ->addIndex(
+                [
+                    'slug',
+                ],
+                ['unique' => true];
+            )
+            ->addIndex(
+                [
+                    'category_id',
+                ],
+            )
             ->create();
 
         $table = $this->table('special_pks', ['id' => false, 'primary_key' => ['id']]);
@@ -118,6 +135,12 @@ class NotEmptySnapshot extends AbstractMigration
                 'limit' => null,
                 'null' => true,
             ])
+            ->addIndex(
+                [
+                    'article_id',
+                ],
+                ['unique' => true];
+            )
             ->create();
 
         $table = $this->table('users');
@@ -144,34 +167,7 @@ class NotEmptySnapshot extends AbstractMigration
             ])
             ->create();
 
-
-        $this->table('categories')
-            ->addIndex(
-                [
-                    'slug',
-                ],
-                ['unique' => true]
-            )
-            ->update();
-
-        $this->table('composite_pks')
-            ->addIndex(
-                [
-                    'id',
-                    'name',
-                ],
-                ['unique' => true]
-            )
-            ->update();
-
         $this->table('products')
-            ->addIndex(
-                [
-                    'slug',
-                ],
-                ['unique' => true]
-            )
-
             ->addForeignKey(
                 'category_id',
                 'categories',
@@ -180,16 +176,6 @@ class NotEmptySnapshot extends AbstractMigration
                     'update' => 'CASCADE',
                     'delete' => 'CASCADE'
                 ]
-            )
-            ->update();
-
-
-        $this->table('special_tags')
-            ->addIndex(
-                [
-                    'article_id',
-                ],
-                ['unique' => true]
             )
             ->update();
 
