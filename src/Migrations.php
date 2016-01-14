@@ -193,20 +193,27 @@ class Migrations
      *
      * @return bool Success
      */
-    public function markMigrated($version, $options = [])
+    public function markMigrated($version = null, $options = [])
     {
         $this->setCommand('mark_migrated');
-        $input = $this->getInput('MarkMigrated', ['version' => $version], $options);
-        $params = [$version];
 
-        $isMigrated = $this->run('isMigrated', $params, $input);
-        if ($isMigrated) {
-            return true;
+        if (isset($options['target']) &&
+            isset($options['exclude']) &&
+            isset($options['only'])
+        ) {
+            throw new \InvalidArgumentException('You should use `exclude` OR `only` (not both) along with a `target` argument');
         }
 
-        $params[] = $this->getConfig()->getMigrationPath();
+        $input = $this->getInput('MarkMigrated', ['version' => $version], $options);
+        $this->setInput($input);
 
-        $this->run('markMigrated', $params, $input);
+        $params = [
+            $this->getConfig()->getMigrationPath(),
+            $this->getManager()->getVersionsToMark($input),
+            $this->output
+        ];
+
+        $this->run('markVersionsAsMigrated', $params, $input);
         return true;
     }
 
