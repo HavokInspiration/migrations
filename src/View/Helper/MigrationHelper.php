@@ -271,6 +271,28 @@ class MigrationHelper extends Helper
         ];
     }
 
+    public function getColumnOption($options)
+    {
+        $wantedOptions = array_flip(['length', 'limit', 'default', 'unsigned', 'null', 'comment', 'autoIncrement', 'precision']);
+        $columnOptions = array_intersect_key($options, $wantedOptions);
+        if (empty($columnOptions['comment'])) {
+            unset($columnOptions['comment']);
+        }
+        if (empty($columnOptions['autoIncrement'])) {
+            unset($columnOptions['autoIncrement']);
+        }
+        if (empty($columnOptions['precision'])) {
+            unset($columnOptions['precision']);
+        } else {
+            // due to Phinx using different naming for the precision and scale to CakePHP
+            $columnOptions['scale'] = $columnOptions['precision'];
+            $columnOptions['precision'] = $columnOptions['limit'];
+            unset($columnOptions['limit']);
+        }
+
+        return $columnOptions;
+    }
+
     /**
      * Returns a string-like representation of a value
      *

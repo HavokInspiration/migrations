@@ -13,7 +13,6 @@
 * @license       http://www.opensource.org/licenses/mit-license.php MIT License
 */
 
-$wantedOptions = array_flip(['length', 'limit', 'default', 'unsigned', 'null', 'comment', 'autoIncrement', 'precision']);
 $tables = $data['__tables'];
 unset($data['__tables']);
 $constraints = [];
@@ -33,12 +32,12 @@ class <%= $name %> extends AbstractMigration
         $this->table('<%= $tableName %>')
         <%- endif; %>
             <%- if (!empty($tableDiff['constraints']['remove'])): %>
-            <%- foreach ($tableDiff['constraints']['remove'] as $constraintName): %>
+            <%- foreach ($tableDiff['constraints']['remove'] as $constraintName => $constraintDefinition): %>
             ->dropForeignKey([], '<%= $constraintName %>')
             <%- endforeach; %>
             <%- endif; %>
             <%- if (!empty($tableDiff['indexes']['remove'])): %>
-            <%- foreach ($tableDiff['indexes']['remove'] as $indexName): %>
+            <%- foreach ($tableDiff['indexes']['remove'] as $indexName => $indexDefinition): %>
             ->removeIndexByName('<%= $indexName %>')
             <%- endforeach; %>
             <%- endif; %>
@@ -48,7 +47,7 @@ class <%= $name %> extends AbstractMigration
         <%- if (!empty($tableDiff['columns']['remove'])): %>
 
         $this->table('<%= $tableName %>')
-        <%- foreach ($tableDiff['columns']['remove'] as $columnName): %>
+        <%- foreach ($tableDiff['columns']['remove'] as $columnName => $columnDefinition): %>
             ->removeColumn('<%= $columnName %>')
         <%- endforeach; %>
             ->update();
@@ -86,17 +85,7 @@ class <%= $name %> extends AbstractMigration
                 <%- if ($specialPk):
                 foreach ($primaryKeys as $primaryKey) : %>
             ->addColumn('<%= $primaryKey['name'] %>', '<%= $primaryKey['info']['columnType'] %>', [<%
-                $options = [];
-                $columnOptions = array_intersect_key($primaryKey['info']['options'], $wantedOptions);
-                if (empty($columnOptions['comment'])) {
-                    unset($columnOptions['comment']);
-                }
-                if (empty($columnOptions['autoIncrement'])) {
-                    unset($columnOptions['autoIncrement']);
-                }
-                if (empty($columnOptions['precision'])) {
-                    unset($columnOptions['precision']);
-                }
+                $columnOptions = $this->Migration->getColumnOption($primaryKey['info']['options']);
                 echo $this->Migration->stringifyList($columnOptions, ['indent' => 4]);
             %>])
                 <%- endforeach; %>
@@ -104,22 +93,7 @@ class <%= $name %> extends AbstractMigration
             <%- endif;
             foreach ($this->Migration->columns($table) as $column => $config): %>
             ->addColumn('<%= $column %>', '<%= $config['columnType'] %>', [<%
-                $options = [];
-                $columnOptions = array_intersect_key($config['options'], $wantedOptions);
-                if (empty($columnOptions['comment'])) {
-                    unset($columnOptions['comment']);
-                }
-                if (empty($columnOptions['autoIncrement'])) {
-                    unset($columnOptions['autoIncrement']);
-                }
-                if (empty($columnOptions['precision'])) {
-                    unset($columnOptions['precision']);
-                } else {
-                    // due to Phinx using different naming for the precision and scale to CakePHP
-                    $columnOptions['scale'] = $columnOptions['precision'];
-                    $columnOptions['precision'] = $columnOptions['limit'];
-                    unset($columnOptions['limit']);
-                }
+                $columnOptions = $this->Migration->getColumnOption($config['options']);
                 echo $this->Migration->stringifyList($columnOptions, ['indent' => 4]);
             %>])
             <%- endforeach;
@@ -205,22 +179,7 @@ class <%= $name %> extends AbstractMigration
                 $type = $columnAttributes['type'];
                 unset($columnAttributes['type']);
 
-                $columnAttributes = array_intersect_key($config['options'], $wantedOptions);
-                if (empty($columnAttributes['comment'])) {
-                    unset($columnAttributes['comment']);
-                }
-                if (empty($columnAttributes['autoIncrement'])) {
-                    unset($columnAttributes['autoIncrement']);
-                }
-                if (empty($columnAttributes['precision'])) {
-                    unset($columnAttributes['precision']);
-                } else {
-                    // due to Phinx using different naming for the precision and scale to CakePHP
-                    $columnAttributes['scale'] = $columnAttributes['precision'];
-                    $columnAttributes['precision'] = $columnAttributes['limit'];
-                    unset($columnAttributes['limit']);
-                }
-
+                $columnAttributes = $this->Migration->getColumnOption($columnAttributes);
                 $columnAttributes = $this->Migration->stringifyList($columnAttributes, ['indent' => 4]);
                 if (!empty($columnAttributes)): %>
             ->addColumn('<%= $columnName %>', '<%= $type %>', [<%= $columnAttributes %>])
@@ -299,6 +258,73 @@ class <%= $name %> extends AbstractMigration
             )<%= ($key === $maxKey) ? ';' : '' %>
             <%- endforeach; %>
 
+        <%- endforeach; %>
+
+        <%- if (!empty($tableDiff['constraints']['add'])): %>
+            <%- foreach ($tableDiff['constraints']['add'] as $constraintName => $constraint):
+            $constraintColumns = $constraint['columns'];
+            sort($constraintColumns);
+            if ($constraint['type'] !== 'unique'):
+                $columnsList = '\'' . $constraint['columns'][0] . '\'';
+                if (count($constraint['columns']) > 1):
+                    $columnsList = '[' . $this->Migration->stringifyList($constraint['columns'], ['indent' => 5]) . ']';
+                endif;
+                $dropForeignKeys[$tableName][] = $columnsList;
+
+                if (is_array($constraint['references'][1])):
+                    $columnsReference = '[' . $this->Migration->stringifyList($constraint['references'][1], ['indent' => 5]) . ']';
+                else:
+                    $columnsReference = '\'' . $constraint['references'][1] . '\'';
+                endif;
+                $statement = $this->Migration->tableStatement($tableName);
+                if (!empty($statement)): %>
+                    <%= $statement %>
+                    <%- endif; %>
+                ->addForeignKey(
+                <%= $columnsList %>,
+                '<%= $constraint['references'][0] %>',
+                <%= $columnsReference %>,
+                [
+                    'update' => '<%= $constraint['update'] %>',
+                    'delete' => '<%= $constraint['delete'] %>'
+                ]
+            )
+                <%- endif; %>
+            <%- endforeach; %>
+                <%- if (isset($this->Migration->tableStatements[$table])): %>
+            ->update();
+
+            <%- endif; %>
+        <%- endif; %>
+
+        <%- foreach ($data as $tableName => $tableDiff): %>
+        $this->table('<%= $tableName %>')
+        <%- if (!empty($tableDiff['indexes']['remove'])): %>
+            <%- foreach ($tableDiff['indexes']['remove'] as $indexName => $indexDefinition): %>
+            ->addIndex(
+                [<%
+                    echo $this->Migration->stringifyList($indexDefinition['columns'], ['indent' => 5]);
+                %>],
+                [<%
+                echo $this->Migration->stringifyList(['name' => $indexName], ['indent' => 5]);
+                %>]
+            )
+            <%- endforeach; %>
+        <%- endif; %>
+        ->update();
+
+        <%- if (!empty($tableDiff['columns']['remove'])): %>
+        $this->table('<%= $tableName %>')
+        <%- foreach ($tableDiff['columns']['remove'] as $columnName => $columnDefinition):
+                $type = $columnDefinition['type'];
+                unset($columnDefinition['type']);
+                $columnOptions = $this->Migration->getColumnOption($columnDefinition);
+                $columnOptions = $this->Migration->stringifyList($columnOptions, ['indent' => 4]);
+            %>
+            ->addColumn('<%= $columnName %>', '<%= $type %>', [<%= $columnOptions %>])
+        <%- endforeach; %>
+            ->update();
+        <%- endif; %>
         <%- endforeach; %>
     }
 }
