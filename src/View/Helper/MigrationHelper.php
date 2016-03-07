@@ -417,10 +417,15 @@ class MigrationHelper extends Helper
      * Returns a $this->table() statement only if it was not issued already
      *
      * @param string $table Table for which the statement is needed
+     * @param bool $reset
      * @return string
      */
-    public function tableStatement($table)
+    public function tableStatement($table, $reset = false)
     {
+        if ($reset === true) {
+            unset($this->tableStatements[$table]);
+        }
+
         if (!isset($this->tableStatements[$table])) {
             $this->tableStatements[$table] = true;
             return '$this->table(\'' . $table . '\')';
