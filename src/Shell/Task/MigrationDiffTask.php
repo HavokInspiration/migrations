@@ -162,8 +162,6 @@ class MigrationDiffTask extends SimpleMigrationTask
 
         $this->calculateDiff();
 
-//        debug($this->templateData);
-
         return [
             'data' => $this->templateData
         ];
