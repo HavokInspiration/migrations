@@ -208,6 +208,9 @@ class Migrations
         $input = $this->getInput('MarkMigrated', ['version' => $version], $options);
         $this->setInput($input);
 
+        $newConfig = $this->getConfig(true);
+        $manager = $this->getManager($newConfig);
+
         $params = [
             $this->getConfig()->getMigrationPath(),
             $this->getManager()->getVersionsToMark($input),
@@ -288,6 +291,7 @@ class Migrations
 
             $this->manager = new CakeManager($config, $this->output);
         } elseif ($config !== null) {
+            // $this->manager->setEnvironments([]);
             $this->manager->setConfig($config);
         }
 

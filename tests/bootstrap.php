@@ -60,13 +60,22 @@ Cake\Cache\Cache::config([
     ]
 ]);
 
-if (!getenv('db_dsn')) {
-    putenv('db_dsn=sqlite:///:memory:');
-}
+// if (!getenv('db_dsn')) {
+    // putenv('db_dsn=sqlite:///:memory:');
+    putenv('db_dsn=sqlite:///cakephp_test');
+// }
 if (!getenv('DB')) {
     putenv('DB=sqlite');
 }
-ConnectionManager::config('test', ['url' => getenv('db_dsn')]);
+ConnectionManager::config('test', [
+    'url' => getenv('db_dsn')
+    // 'className' => 'Cake\Database\Connection',
+    // 'driver' => 'Cake\Database\Driver\Sqlite',
+    // 'database' => $root . DS . 'testplugin.sqlite',
+    // 'encoding' => 'utf8',
+    // 'cacheMetadata' => false,
+    // 'quoteIdentifiers' => false,
+]);
 
 Plugin::load('Migrations', [
     'path' => dirname(dirname(__FILE__)) . DS,

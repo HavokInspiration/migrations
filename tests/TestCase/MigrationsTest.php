@@ -51,30 +51,17 @@ class MigrationsTest extends TestCase
             'source' => 'TestsMigrations'
         ];
 
-        // Get the PDO connection to have the same across the various objects needed to run the tests
-        $migrations = new Migrations();
-        $input = $migrations->getInput('Migrate', [], $params);
-        $migrations->setInput($input);
-        $migrations->getManager($migrations->getConfig());
         $this->Connection = ConnectionManager::get('test');
-        $connection = $migrations->getManager()->getEnvironment('default')->getAdapter()->getConnection();
-        $this->Connection->driver()->connection($connection);
-
-        // Get an instance of the Migrations object on which we will run the tests
         $this->migrations = new Migrations($params);
-        $this->migrations
-            ->getManager($migrations->getConfig())
-            ->getEnvironment('default')
-            ->getAdapter()
-            ->setConnection($connection);
 
         $tables = (new Collection($this->Connection))->listTables();
         if (in_array('phinxlog', $tables)) {
             $ormTable = TableRegistry::get('phinxlog', ['connection' => $this->Connection]);
             $query = $this->Connection->driver()->schemaDialect()->truncateTableSql($ormTable->schema());
-            $this->Connection->execute(
-                $query[0]
-            );
+
+            foreach ($query as $stmt) {
+                $this->Connection->execute($stmt);
+            }
         }
     }
 
