@@ -19,6 +19,7 @@ use Cake\Datasource\ConnectionManager;
 use Cake\TestSuite\StringCompareTrait;
 use Cake\TestSuite\TestCase;
 use Cake\Utility\Inflector;
+use Migrations\Test\TestCase\Shell\TestClassWithSnapshotTrait;
 
 /**
  * MigrationSnapshotTaskTest class
@@ -82,16 +83,20 @@ class MigrationSnapshotTaskTest extends TestCase
      */
     public function testGetTableNames()
     {
-        $this->skipIf(true);
-        $this->Task->expects($this->any())
+        $class = $this->getMock(
+            'Migrations\Test\TestCase\Shell\TestClassWithSnapshotTrait',
+            ['findTables', 'fetchTableName']
+        );
+
+        $class->expects($this->any())
             ->method('findTables')
             ->with('TestBlog')
             ->will($this->returnValue(['ArticlesTable.php', 'TagsTable.php']));
 
-        $this->Task->method('fetchTableName')
+        $class->method('fetchTableName')
             ->will($this->onConsecutiveCalls(['articles_tags', 'articles'], ['articles_tags', 'tags']));
 
-        $results = $this->Task->getTableNames('TestBlog');
+        $results = $class->getTableNames('TestBlog');
         $expected = ['articles_tags', 'articles', 'tags'];
         $this->assertEquals(array_values($expected), array_values($results));
     }
@@ -191,25 +196,24 @@ class MigrationSnapshotTaskTest extends TestCase
      */
     public function testFetchTableNames()
     {
-        $this->skipIf(true);
-        $task = $this->getTaskMock(['in', 'err']);
+        $class = new TestClassWithSnapshotTrait();
         $expected = ['alternative.special_tags'];
-        $this->assertEquals($expected, $task->fetchTableName('SpecialTagsTable.php', 'TestBlog'));
+        $this->assertEquals($expected, $class->fetchTableName('SpecialTagsTable.php', 'TestBlog'));
 
         ConnectionManager::config('alternative', [
             'database' => 'alternative'
         ]);
-        $task->connection = 'alternative';
+        $class->connection = 'alternative';
         $expected = ['special_tags'];
-        $this->assertEquals($expected, $task->fetchTableName('SpecialTagsTable.php', 'TestBlog'));
+        $this->assertEquals($expected, $class->fetchTableName('SpecialTagsTable.php', 'TestBlog'));
 
         ConnectionManager::drop('alternative');
         ConnectionManager::config('alternative', [
             'schema' => 'alternative'
         ]);
-        $task->connection = 'alternative';
+        $class->connection = 'alternative';
         $expected = ['special_tags'];
-        $this->assertEquals($expected, $task->fetchTableName('SpecialTagsTable.php', 'TestBlog'));
+        $this->assertEquals($expected, $class->fetchTableName('SpecialTagsTable.php', 'TestBlog'));
     }
 
     /**
