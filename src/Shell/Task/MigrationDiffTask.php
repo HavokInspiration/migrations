@@ -383,6 +383,7 @@ class MigrationDiffTask extends SimpleMigrationTask
 
         $input = new ArrayInput($inputArgs, $definition);
         $path = $this->getOperationsPath($input) . DS . 'schema-dump-' . $connectionName;
+        debug($path);
 
         if (!file_exists($path)) {
             $msg = 'Unable to retrieve the schema dump file. You can create a dump file using ' .

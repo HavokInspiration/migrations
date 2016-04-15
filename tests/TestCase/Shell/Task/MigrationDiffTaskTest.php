@@ -14,9 +14,14 @@ namespace Migrations\Test\TestCase\Shell\Task;
 use Bake\Shell\Task\BakeTemplateTask;
 use Cake\Console\ConsoleIo;
 use Cake\Core\Configure;
+use Cake\Core\Plugin;
+use Cake\Database\Schema\Collection;
+use Cake\Datasource\ConnectionManager;
+use Cake\ORM\TableRegistry;
 use Cake\TestSuite\StringCompareTrait;
 use Cake\TestSuite\TestCase;
 use Cake\Utility\Inflector;
+use Migrations\Migrations;
 use Migrations\Test\TestCase\Shell\TestCompletionStringOutput;
 
 /**
@@ -137,6 +142,50 @@ class MigrationDiffTaskTest extends TestCase
     }
 
     /**
+     * Tests baking a diff
+     *
+     * @return void
+     */
+    public function testBakingDiff()
+    {
+        $diffConfigFolder = Plugin::path('Migrations') . 'tests' . DS . 'comparisons' . DS . 'Diff'. DS;
+        $diffMigrationsPath = $diffConfigFolder . 'the_diff.php';
+        $diffDumpPath = $diffConfigFolder . 'schema-dump-test_comparisons';
+
+        $destinationConfigDir = ROOT . 'config' . DS . 'MigrationsDiff' . DS;
+        $destination = $destinationConfigDir . '20160415220805_TheDiff.php';
+        $destinationDumpPath = $destinationConfigDir . 'schema-dump-test_comparisons';
+        copy($diffMigrationsPath, $destination);
+
+        $this->getMigrations()->migrate();
+
+        unlink($destination);
+        copy($diffDumpPath, $destinationDumpPath);
+
+        $connection = ConnectionManager::get('test_comparisons');
+        $connection->newQuery()
+            ->delete('phinxlog')
+            ->where(['version' => 20160415220805])
+            ->execute();
+
+        $this->_compareBasePath = Plugin::path('Migrations') . 'tests' . DS . 'comparisons' . DS . 'Diff' . DS;
+
+        $this->Task = $this->getTaskMock(['getDumpSchema']);
+        $this->Task
+            ->method('getDumpSchema')
+            ->will($this->returnValue(unserialize(file_get_contents($destinationDumpPath))));
+
+        $this->Task->params['connection'] = 'test_comparisons';
+        $this->Task->pathFragment = 'config/MigrationsDiff/';
+        $this->Task->connection = 'test_comparisons';
+
+        $bakeName = $this->getBakeName('TheDiff');
+        $result = $this->Task->bake($bakeName);
+
+        $this->assertCorrectSnapshot($bakeName, $result);
+    }
+
+    /**
      * Get the baked filename based on the current db environment
      *
      * @param string $name Name of the baked file, unaware of the DB environment
@@ -150,6 +199,23 @@ class MigrationDiffTaskTest extends TestCase
         }
 
         return $name;
+    }
+
+    /**
+     * Gets a Migrations object in order to easily create and drop tables during the
+     * tests
+     *
+     * @return \Migrations\Migrations
+     */
+    protected function getMigrations()
+    {
+        $params = [
+            'connection' => 'test_comparisons',
+            'source' => 'MigrationsDiff'
+        ];
+        $migrations = new Migrations($params);
+
+        return $migrations;
     }
 
     /**
