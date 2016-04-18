@@ -1,13 +1,13 @@
 <?php
 use Migrations\AbstractMigration;
 
-class TheDiff extends AbstractMigration
+class TheDiffMysql extends AbstractMigration
 {
 
     public function up()
     {
         $this->table('articles')
-            ->dropForeignKey(['user_id'])
+            ->dropForeignKey([], 'articles_ibfk_1')
             ->removeIndexByName('UNIQUE_SLUG')
             ->removeIndexByName('rating_index')
             ->removeIndexByName('BY_NAME')

@@ -148,13 +148,15 @@ class MigrationDiffTaskTest extends TestCase
      */
     public function testBakingDiff()
     {
+        $this->skipIf(env('DB') === 'sqlite');
+
         $diffConfigFolder = Plugin::path('Migrations') . 'tests' . DS . 'comparisons' . DS . 'Diff'. DS;
-        $diffMigrationsPath = $diffConfigFolder . 'the_diff.php';
-        $diffDumpPath = $diffConfigFolder . 'schema-dump-test_comparisons';
+        $diffMigrationsPath = $diffConfigFolder . 'the_diff_' . env('DB') . '.php';
+        $diffDumpPath = $diffConfigFolder . 'schema-dump-test_comparisons_' . env('DB');
 
         $destinationConfigDir = ROOT . 'config' . DS . 'MigrationsDiff' . DS;
-        $destination = $destinationConfigDir . '20160415220805_TheDiff.php';
-        $destinationDumpPath = $destinationConfigDir . 'schema-dump-test_comparisons';
+        $destination = $destinationConfigDir . '20160415220805_TheDiff' . ucfirst(env('DB')) . '.php';
+        $destinationDumpPath = $destinationConfigDir . 'schema-dump-test_comparisons_' . env('DB');
         copy($diffMigrationsPath, $destination);
 
         $this->getMigrations()->migrate();
@@ -193,10 +195,7 @@ class MigrationDiffTaskTest extends TestCase
      */
     public function getBakeName($name)
     {
-        $dbenv = getenv("DB");
-        if ($dbenv !== 'mysql') {
-            $name .= ucfirst($dbenv);
-        }
+        $name .= ucfirst(getenv("DB"));
 
         return $name;
     }

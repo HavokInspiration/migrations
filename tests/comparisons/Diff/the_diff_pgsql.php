@@ -1,16 +1,16 @@
 <?php
 use Migrations\AbstractMigration;
 
-class TheDiff extends AbstractMigration
+class TheDiffPgsql extends AbstractMigration
 {
 
     public function up()
     {
         $this->table('articles')
-            ->dropForeignKey(['user_id'])
-            ->removeIndexByName('UNIQUE_SLUG')
+            ->dropForeignKey([], 'articles_user_id')
+            ->removeIndexByName('unique_slug')
             ->removeIndexByName('rating_index')
-            ->removeIndexByName('BY_NAME')
+            ->removeIndexByName('by_name')
             ->update();
 
         $this->table('articles')
@@ -30,7 +30,7 @@ class TheDiff extends AbstractMigration
             ])
             ->addColumn('user_id', 'integer', [
                 'default' => null,
-                'limit' => 11,
+                'limit' => 10,
                 'null' => false,
             ])
             ->addIndex(
@@ -60,7 +60,7 @@ class TheDiff extends AbstractMigration
         $this->table('articles')
             ->addColumn('category_id', 'integer', [
                 'default' => null,
-                'length' => 11,
+                'length' => 10,
                 'null' => false,
             ])
             ->update();
@@ -71,7 +71,7 @@ class TheDiff extends AbstractMigration
                     'slug',
                 ],
                 [
-                    'name' => 'UNIQUE_SLUG',
+                    'name' => 'unique_slug',
                 ]
             )
             ->addIndex(
@@ -130,7 +130,7 @@ class TheDiff extends AbstractMigration
 
 
         $this->table('articles')
-            ->removeIndexByName('UNIQUE_SLUG')
+            ->removeIndexByName('unique_slug')
             ->removeIndexByName('category_id')
             ->removeIndexByName('rating_index')
             ->update();
@@ -141,7 +141,7 @@ class TheDiff extends AbstractMigration
                     'slug',
                 ],
                 [
-                    'name' => 'UNIQUE_SLUG',
+                    'name' => 'unique_slug',
                     'unique' => true,
                 ]
             )
@@ -158,7 +158,7 @@ class TheDiff extends AbstractMigration
                     'name',
                 ],
                 [
-                    'name' => 'BY_NAME',
+                    'name' => 'by_name',
                 ]
             )
             ->update();
