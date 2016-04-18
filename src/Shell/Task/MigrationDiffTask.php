@@ -330,7 +330,7 @@ class MigrationDiffTask extends SimpleMigrationTask
             $lastVersion = $this->migratedItems[0]['version'];
             $lastFile = end($this->migrationsFiles);
 
-            return (bool)strpos($lastFile, $lastVersion);
+            return (bool)strpos($lastFile, (string)$lastVersion);
         }
 
         return false;
