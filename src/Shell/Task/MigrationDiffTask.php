@@ -275,6 +275,8 @@ class MigrationDiffTask extends SimpleMigrationTask
         foreach ($this->commonTables as $table => $currentSchema) {
             $currentIndexes = $currentSchema->indexes();
             $oldIndexes = $this->dumpSchema[$table]->indexes();
+            sort($currentIndexes);
+            sort($oldIndexes);
 
             // brand new indexes
             $addedIndexes = array_diff($currentIndexes, $oldIndexes);

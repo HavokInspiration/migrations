@@ -68,18 +68,18 @@ class TheDiffPgsql extends AbstractMigration
         $this->table('articles')
             ->addIndex(
                 [
-                    'slug',
-                ],
-                [
-                    'name' => 'unique_slug',
-                ]
-            )
-            ->addIndex(
-                [
                     'category_id',
                 ],
                 [
                     'name' => 'category_id',
+                ]
+            )
+            ->addIndex(
+                [
+                    'slug',
+                ],
+                [
+                    'name' => 'unique_slug',
                 ]
             )
             ->addIndex(
@@ -130,8 +130,8 @@ class TheDiffPgsql extends AbstractMigration
 
 
         $this->table('articles')
-            ->removeIndexByName('unique_slug')
             ->removeIndexByName('category_id')
+            ->removeIndexByName('unique_slug')
             ->removeIndexByName('rating_index')
             ->update();
 
