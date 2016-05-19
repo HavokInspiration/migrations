@@ -88,7 +88,7 @@ class MigrationsShell extends Shell
      * The input parameter of the ``MigrationDispatcher::run()`` method is manually built
      * in case a MigrationsShell is dispatched using ``Shell::dispatch()``.
      *
-     * @return void
+     * @return bool Success of the call.
      */
     public function main()
     {
@@ -97,7 +97,7 @@ class MigrationsShell extends Shell
         $app->setAutoExit(false);
         $exitCode = $app->run($input);
 
-        if (isset($this->argv[1]) && in_array($this->argv[1], ['migrate', 'rollback']) && $exitCode === 0) {
+        if ($exitCode === 0 && isset($this->argv[1]) && in_array($this->argv[1], ['migrate', 'rollback']) && $exitCode === 0) {
             $dispatchCommand = 'migrations dump';
             if (!empty($this->params['connection'])) {
                 $dispatchCommand .= ' -c ' . $this->params['connection'];
@@ -107,8 +107,14 @@ class MigrationsShell extends Shell
                 $dispatchCommand .= ' -p ' . $this->params['plugin'];
             }
 
-            $this->dispatchShell($dispatchCommand);
+            $dumpExitCode = $this->dispatchShell($dispatchCommand);
         }
+
+        if (isset($dumpExitCode) && $exitCode === 0 && $dumpExitCode !== 0) {
+            $exitCode = $dumpExitCode;
+        }
+
+        return $exitCode === 0;
     }
 
     /**
