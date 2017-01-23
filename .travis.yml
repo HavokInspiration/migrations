@@ -65,10 +65,9 @@ before_script:
 
   - phpenv rehash
   - set +H
-  - cp phpunit.xml.dist phpunit.xml
 
 script:
-  - sh -c "if [ '$DEFAULT' = '1' ]; then phpunit --stderr; fi"
+  - sh -c "if [ '$DEFAULT' = '1' ]; then vendor/bin/phpunit; fi"
   - sh -c "if [ '$PHPCS' = '1' ]; then vendor/bin/phpcs -p --extensions=php --standard=psr2 --ignore=tests/bootstrap.php,tests/comparisons/*,tests/test_app/* ./src ./tests ; fi"
   - sh -c "if [ '$CODECOVERAGE' = '1' ]; then phpdbg -qrr vendor/bin/phpunit --coverage-clover=clover.xml || true; fi"
   - sh -c "if [ '$CODECOVERAGE' = '1' ]; then wget -O codecov.sh https://codecov.io/bash; fi"
